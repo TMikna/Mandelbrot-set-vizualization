@@ -1,7 +1,8 @@
 import cv2 as cv
 import numpy as np 
+import time
 
-maxItr = 300
+maxItr = 500
 width = 800       #width, heigth calculated automatically
 
 
@@ -18,6 +19,9 @@ def paintImg():
     global hSS, wSS, yMin, xMin
     global maxItr
     img = np.zeros((h, w, 3), dtype = np.uint8)
+
+    tic = time.perf_counter()     #start measuting time
+
     # check if complex number c belongs to mandelbrot set
     for i in range (0, h):         #i is for rows so works on vertical (y) axis, hence decides imaginary part
         for j in range (0, w):     #j is for colums so works on horizonatal (x) axis, hence decides real part
@@ -34,15 +38,15 @@ def paintImg():
             if (itrCount >= maxItr):
                 img[i, j] = (0, 0, 0)
             else:
-                img[i, j, 0] = round(255 - itrCount * 255 / maxItr)
-                img[i, j, 1] = round(255 - itrCount * 255 / maxItr * 0.25)
-                img[i, j, 2] = round(255 - itrCount * 255 / maxItr * 0.9)
-# some coloring: https://stackoverflow.com/questions/16500656/which-color-gradient-is-used-to-color-mandelbrot-in-wikipedia
-            # if (itrCount < maxItr and itrCount > maxItr* 0.8):
-            #     img[i, j] = [255, 255, 255]
-        if(i%10 == 0):    
-            cv.imshow("Mandelbrot", img)
-            cv.waitKey(10)
+                img[i, j, 0] = round(255 - itrCount * 255 / maxItr * 0.5)
+                img[i, j, 1] = round(255 - itrCount * 255 / maxItr * 0.7)
+                img[i, j, 2] = round(255 - itrCount * 255 / maxItr * 1)
+    
+    toc = time.perf_counter()     ##stop measuting time
+    print("Time sequential:          %12.4f" % (toc-tic))
+
+    cv.imshow("Mandelbrot", img)
+    cv.waitKey(10)
 
 def resize (koef, x = 0, y = 0):
     global xMin, xMax, yMin, yMax
@@ -50,32 +54,16 @@ def resize (koef, x = 0, y = 0):
     global w, h
     global wSS, hSS
 
-    # x and y dictance from image center
-    xC = x-w/2
-    yC = y-h/2
+    xNewCenter = xMin + x * wSS
+    yNewCenter = yMin + y * hSS
 
-    xMinOld = xMin
-    xMaxOld = xMax
-    yMinOld = yMin
-    yMaxOld = yMax
+    xLen = xLen*koef
+    yLen = yLen*koef
 
-    # xMin = xMin*koef + xC*wSS
-    # xMax = xMax*koef + xC*wSS
-    # yMin = yMin*koef + yC*hSS
-    # yMax = yMax*koef + yC*hSS
-
-    xMin = xMin*koef
-    xMax = xMax*koef
-    yMin = yMin*koef
-    yMax = yMax*koef
-
-    xLen = xMax - xMin #width length in terms of complex plane
-    yLen = yMax - yMin #height length in terms of complex plane
-
-    xMin = xMin + xC*wSS
-    xMax = xMax + xC*wSS
-    yMin = yMin + yC*hSS
-    yMax = yMax + yC*hSS
+    xMin = xNewCenter - xLen/2
+    xMax = xNewCenter + xLen/2
+    yMin = yNewCenter - yLen/2
+    yMax = yNewCenter + yLen/2
 
     wSS = xLen/w       #width step size
     hSS = yLen/h       #height step size
@@ -84,10 +72,7 @@ def mouseEvent (event, x, y, flags, param):
 
     if event == cv.EVENT_LBUTTONDOWN:
         resize(0.5, x, y)
-        print("down")
-        print(f"{x}; {y}")
         paintImg()
-
 
 xMin, xMax = -2.01, 1  #min and max values of x axis (real part of complex number)
 yMin, yMax = -1.25, 1.25  #min and max values of y axis (imaginary part of complex number)
@@ -106,6 +91,8 @@ img = np.zeros((h, w, 3), dtype = np.uint8)
 refPt = []
 
 paintImg()
+
+
 
 cv.imwrite("mand.png", img) 
 cv.setMouseCallback("Mandelbrot", mouseEvent)
